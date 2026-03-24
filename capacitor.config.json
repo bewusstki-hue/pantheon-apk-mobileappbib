@@ -1,0 +1,6 @@
+{
+  "appId": "com.pantheon.mobileappbib",
+  "appName": "MobileAppBib",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}
