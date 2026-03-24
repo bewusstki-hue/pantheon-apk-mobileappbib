@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#060810">
+  <title>Pantheon Mobile Library</title>
+  <style>
+    :root {
+      --bg: #060810;
+      --surface: #0b0f1a;
+      --gold: #c8a84b;
+      --cyan: #00d4ff;
+      --text: #b8c4d8;
+      --text-secondary: #8a94a6;
+      --glass-blur: 12px;
+      --glass-saturate: 180%;
+      --glass-opacity: 0.85;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      width: min(96vw, 480px);
+      margin: 0 auto;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(11, 15, 26, var(--glass-opacity));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      border: 1px solid rgba(200, 168, 75, 0.2);
+      border-radius: 24px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--gold);
+      text-shadow: 0 0 8px rgba(200, 168, 75, 0.3);
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .platform-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--surface);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+      align-self: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .button {
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      color: var(--gold);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .button:hover {
+      background: rgba(200, 168, 75, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button.primary {
+      background: var(--gold);
+      color: var(--bg);
+      border-color: var(--gold);
+    }
+
+    .button.primary:hover {
+      background: #d4b55a;
+    }
+
+    .button.secondary {
+      background: var(--surface);
+      color: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .button.secondary:hover {
+      background: rgba(0, 212, 255, 0.1);
+    }
+
+    .output {
+      padding: 16px;
+      background: var(--surface);
+      border-radius: 12px;
+      border-left: 4px solid var(--cyan);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 120px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .output.empty {
+      color: var(--text-secondary);
+      border-left-color: var(--text-secondary);
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Pantheon Mobile Library</h1>
+      <p>Omega-Extension für Android APK + PWA</p>
+      <span class="platform-badge" id="platform-badge">AGNOSTIC_NODE</span>
+    </div>
+
+    <div class="controls">
+      <button class="button primary" id="execute-btn">Execute System</button>
+      <button class="button secondary" id="clear-btn">Clear Output</button>
+    </div>
+
+    <div class="output" id="output">Waiting for execution...</div>
+    <div class="status" id="status">Platform: AGNOSTIC_NODE</div>
+  </div>
+
+  <script>
+    class PantheonExtension {
+      constructor() {
+        this.state = {
+          lastSystem: null,
+          lastPayload: null,
+          executionCount: 0
+        };
+      }
+
+      detectPlatform() {
+        const userAgent = navigator.userAgent || '';
+        const isAndroid = /Android/i.test(userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                      window.matchMedia('(display-mode: fullscreen)').matches;
+
+        if (isAndroid && window.Android) {
+          return 'ANDROID_APK';
+        } else if (isAndroid) {
+          return 'ANDROID_BROWSER';
+        } else if (isIOS) {
+          return 'IOS';
+        } else if (isPWA) {
+          return 'PWA';
+        } else {
+          return 'AGNOSTIC_NODE';
+        }
+      }
+
+      async execute(system, payload = {}) {
+        this.state.lastSystem = system;
+        this.state.lastPayload = payload;
+        this.state.executionCount++;
+
+        const platform = this.detectPlatform();
+        const result = {
+          system,
+          payload,
+          platform,
+          timestamp: new Date().toISOString(),
+          executionId: `exec_${Date.now()}_${this.state.executionCount}`,
+          success: true,
+          message: `Execution completed on ${platform}`
+        };
+
+        // Simulate async processing
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Android Bridge
+        if (platform === 'ANDROID_APK' && window.Android && window.Android.receiveTruth) {
+          window.Android.receiveTruth(JSON.stringify({
+            event: 'pantheon_execution',
+            data: result
+          }));
+        }
+
+        return result;
+      }
+
+      reset() {
+        this.state = {
+          lastSystem: null,
+          lastPayload: null,
+          executionCount: 0
+        };
+      }
+    }
+
+    class MobileApp {
+      constructor() {
+        this.pantheon = new PantheonExtension();
+        this.initUI();
+        this.bindEvents();
+        this.updatePlatformBadge();
+      }
+
+      initUI() {
+        this.container = document.querySelector('.container');
+        this.output = document.getElementById('output');
+        this.executeBtn = document.getElementById('execute-btn');
+        this.clearBtn = document.getElementById('clear-btn');
+        this.status = document.getElementById('status');
+        this.platformBadge = document.getElementById('platform-badge');
+      }
+
+      bindEvents() {
+        this.executeBtn.addEventListener('click', () => this.handleExecute());
+        this.clearBtn.addEventListener('click', () => this.handleClear());
+      }
+
+      updatePlatformBadge() {
+        const platform = this.pantheon.detectPlatform();
+        this.platformBadge.textContent = platform;
+        this.status.textContent = `Platform: ${platform}`;
+      }
+
+      async handleExecute() {
+        try {
+          this.render();
+
+          const system = "mobile_library_v2.omega";
+          const payload = {
+            action: "
